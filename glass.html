@@ -1,0 +1,116 @@
+<style id="liquid-glass-theme">
+/* ===== Liquid 3D Glass + Premium Buttons (purple) ===== */
+:root{
+  --lg-a:#a855f7; --lg-b:#7e22ce; --lg-c:#d8b4fe;
+  --lg-glow:rgba(168,85,247,.45);
+  --lg-glass:linear-gradient(135deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 45%,rgba(168,85,247,.10) 100%);
+  --lg-edge:rgba(255,255,255,.22);
+}
+html,body{background:#07040d !important;}
+body{
+  background:
+    radial-gradient(900px 600px at 12% -10%,rgba(168,85,247,.38),transparent 60%),
+    radial-gradient(800px 560px at 110% 20%,rgba(126,34,206,.34),transparent 62%),
+    radial-gradient(700px 500px at 40% 115%,rgba(216,180,254,.18),transparent 60%),
+    #07040d !important;
+  background-attachment:fixed !important;
+  color:#f5f0fb;
+}
+/* floating liquid blobs behind everything */
+body::before{
+  content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle at 25% 30%,rgba(192,132,252,.28) 0,transparent 22%),
+    radial-gradient(circle at 75% 65%,rgba(147,51,234,.30) 0,transparent 24%),
+    radial-gradient(circle at 55% 15%,rgba(233,213,255,.14) 0,transparent 16%);
+  filter:blur(40px);animation:lgFloat 18s ease-in-out infinite alternate;
+}
+@keyframes lgFloat{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-40px,30px,0) scale(1.08)}}
+
+/* glass surfaces */
+.box,.card,.panel,.stat,.feature,.server-card,.stat-card,.console-box,.form-group,.form-card,.server-item,.item,.order,.key-card,.trust,
+.field,form,.msg,.error-box,.console,.ubar,.modal,.sheet,dialog{
+  background:var(--lg-glass) !important;
+  backdrop-filter:blur(22px) saturate(170%) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(170%) !important;
+  border:1px solid var(--lg-edge) !important;
+  border-radius:22px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -14px 32px rgba(168,85,247,.14),
+    inset 14px 0 30px -18px rgba(255,255,255,.18),
+    0 24px 60px rgba(0,0,0,.45) !important;
+  position:relative;overflow:hidden;
+}
+/* liquid highlight sweep on surfaces */
+.box::after,.card::after,.panel::after,.server-card::after,.stat-card::after,.feature::after{
+  content:"";position:absolute;top:-60%;left:-40%;width:55%;height:220%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.12),transparent);
+  transform:rotate(12deg);pointer-events:none;animation:lgSheen 7s ease-in-out infinite;
+}
+@keyframes lgSheen{0%,60%{left:-60%}100%{left:130%}}
+
+/* inputs */
+input,select,textarea{
+  background:rgba(10,4,20,.55) !important;border:1px solid rgba(255,255,255,.16) !important;
+  border-radius:14px !important;color:#fff !important;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.08) !important;
+  transition:border-color .25s,box-shadow .25s !important;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none !important;border-color:var(--lg-c) !important;
+  box-shadow:0 0 0 4px rgba(168,85,247,.25),inset 0 2px 8px rgba(0,0,0,.35) !important;
+}
+
+/* premium 3D liquid buttons */
+button,.btn,.auth,.go,.action-btn,a.auth,.menu-btn,[class*="btn"]{
+  position:relative !important;overflow:hidden !important;
+  border:1px solid rgba(255,255,255,.28) !important;
+  border-radius:16px !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,0) 50%,rgba(0,0,0,.10) 51%,rgba(0,0,0,.18) 100%),
+    linear-gradient(135deg,var(--lg-c) 0%,var(--lg-a) 45%,var(--lg-b) 100%) !important;
+  color:#fff !important;
+  text-shadow:0 1px 2px rgba(60,0,100,.6) !important;
+  font-weight:800 !important;letter-spacing:1px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.65),
+    inset 0 -4px 10px rgba(40,0,70,.45),
+    0 12px 28px var(--lg-glow),
+    0 2px 0 rgba(60,0,100,.6) !important;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .25s,filter .25s !important;
+  cursor:pointer;
+}
+button::before,.btn::before,.auth::before,.go::before,a.auth::before{
+  content:"";position:absolute;top:0;left:-75%;width:50%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:skewX(-20deg);transition:left .6s ease;pointer-events:none;
+}
+button:hover::before,.btn:hover::before,.auth:hover::before,.go:hover::before,a.auth:hover::before{left:130%}
+button:hover,.btn:hover,.auth:hover,.go:hover,a.auth:hover,[class*="btn"]:hover{
+  transform:translateY(-3px) scale(1.02) !important;filter:brightness(1.08) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -4px 10px rgba(40,0,70,.45),
+             0 18px 40px rgba(168,85,247,.6),0 2px 0 rgba(60,0,100,.6) !important;
+}
+button:active,.btn:active,.auth:active,.go:active,a.auth:active{
+  transform:translateY(1px) scale(.97) !important;
+  box-shadow:inset 0 3px 8px rgba(40,0,70,.55),0 4px 12px var(--lg-glow) !important;
+}
+button:disabled{opacity:.45 !important;transform:none !important;filter:grayscale(.4) !important}
+
+/* danger / stop buttons keep semantic red but same 3D feel */
+.stop-btn,.btn-stop,.no,.danger,.btn-danger,[data-danger]{
+  background:linear-gradient(180deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,0) 50%,rgba(0,0,0,.12) 100%),
+             linear-gradient(135deg,#fb7185,#be123c) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -4px 10px rgba(80,0,20,.45),0 12px 26px rgba(244,63,94,.4) !important;
+}
+
+/* headings get a liquid chrome gradient */
+h1,.title,.brand-title,.logo-title{
+  background:linear-gradient(180deg,#ffffff 0%,#e9d5ff 45%,#a855f7 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;
+  text-shadow:none !important;
+}
+::selection{background:rgba(168,85,247,.5);color:#fff}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+</style>

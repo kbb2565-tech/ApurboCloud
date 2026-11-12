@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ server_name.upper() }} — {{ site_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--ac:{{ theme_color }};--ac-dim:{{ theme_color }}88;--ac-lite:{{ theme_color }}11;}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#06010f;color:#e5e7eb;font-family:'JetBrains Mono',monospace;min-height:100vh;position:relative}
+        
+        #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+        
+        header{background:rgba(10, 0, 21, 0.85);backdrop-filter:blur(10px);border-bottom:3px solid var(--ac-dim);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+        .logo{display:flex;align-items:center;gap:8px}
+        .logo-skull{font-size:20px;filter:drop-shadow(0 0 6px var(--ac))}
+        .logo-name{color:var(--ac);font-weight:700;font-size:15px;letter-spacing:1px;text-shadow:0 0 8px var(--ac)}
+        
+        .btn{padding:6px 14px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;border:2px solid;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+        .btn-red{border-color:#ef444488;color:#ef4444;background:transparent}
+        .btn-red:hover{background:#ef444411}
+
+        main{padding:20px;max-width:750px;margin:0 auto;position:relative;z-index:2}
+        
+        /* Top Navigation Header */
+        .top-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .btn-back{border-color:var(--ac-dim);color:var(--ac);background:transparent}
+        .status-pill{font-size:11px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:#ef4444}
+        .status-dot.running{background:var(--ac);box-shadow:0 0 8px var(--ac)}
+
+        /* Main Action Buttons Grid */
+        .control-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+        .ctrl-btn{padding:12px;border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid;background:rgba(10, 0, 21, 0.85);backdrop-filter:blur(10px);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
+        
+        .btn-start{border-color:var(--ac);color:var(--ac);background:var(--ac-lite)}
+        .btn-start:hover{background:var(--ac);color:#000;box-shadow:0 0 15px var(--ac-dim)}
+        .btn-restart{border-color:var(--ac-dim);color:var(--ac)}
+        .btn-restart:hover{background:var(--ac-lite)}
+        .btn-stop{border-color:#ef444488;color:#ef4444}
+        .btn-stop:hover{background:#ef444422}
+        
+        .btn-delete-full{width:100%;padding:12px;border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #ef444488;color:#ef4444;background:rgba(10, 0, 21, 0.85);margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+        .btn-delete-full:hover{background:#ef444422;border-color:#ef4444}
+
+        /* Tabs */
+        .tabs{display:flex;gap:8px;margin-bottom:16px;background:rgba(10, 0, 21, 0.85);padding:6px;border-radius:10px;border:2px solid #1a0a2a}
+        .tab-btn{flex:1;padding:8px;border:none;background:transparent;color:#6b7280;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;border-radius:6px;transition:all .2s;text-align:center}
+        .tab-btn.active{background:var(--ac-lite);color:var(--ac);border:1px solid var(--ac-dim)}
+
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+
+        /* Console Box & Cards */
+        .console-box{background:rgba(6, 1, 15, 0.95);border:2px solid var(--ac-dim);border-radius:12px;overflow:hidden;box-shadow:0 0 20px var(--ac-lite)}
+        .console-header{padding:10px 14px;background:rgba(10, 0, 21, 0.9);border-bottom:2px solid var(--ac-dim);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ac)}
+        .console-tools{display:flex;gap:6px}
+        .tool-btn{padding:4px 8px;border-radius:5px;font-size:9px;font-family:inherit;font-weight:700;cursor:pointer;background:transparent;border:1px solid}
+        
+        .console-body{padding:14px;height:350px;overflow-y:auto;font-size:12px;color:var(--ac);line-height:1.5;white-space:pre-wrap;word-break:break-all}
+        
+        /* Input Fields */
+        .cmd-bar{padding:10px 14px;border-top:2px solid var(--ac-dim);background:rgba(10, 0, 21, 0.9);display:flex;align-items:center;gap:8px}
+        .cmd-input{background:transparent;border:none;color:var(--ac);font-family:inherit;font-size:12px;outline:none;width:100%}
+
+        .chips{display:flex;flex-wrap:wrap;gap:8px}
+        .chip{padding:7px 12px;border-radius:999px;border:1px solid var(--ac-dim);background:var(--ac-lite);color:var(--ac);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+        .chip:active{transform:scale(.95)}
+        .chip.busy{opacity:.5;pointer-events:none}
+        .chip.done{background:var(--ac);color:#000}
+        /* Upload Zone */
+        .file-upload-zone{border:2px dashed var(--ac-dim);padding:30px;text-align:center;border-radius:10px;background:var(--ac-lite);cursor:pointer;margin-bottom:15px;transition:all .2s}
+        .file-upload-zone:hover{background:rgba(10, 0, 21, 0.85);border-color:var(--ac)}
+
+        /* red + yellow smooth theme */
+        :root{--ac:#d8b4fe;--ac2:#a855f7;--ac-dim:#d8b4fe66;--ac-lite:#d8b4fe14}
+        body{background:radial-gradient(ellipse at 50% 0%,#22142e 0,transparent 48%),#0d0b14}
+        #matrix{opacity:.12}
+        header{background:rgba(16,12,22,.9);border-bottom:1px solid #d8b4fe44}
+        .logo-skull,.logo-name{text-shadow:none}
+        .btn,.ctrl-btn,.tab-btn,.tool-btn,.chip,.btn-delete-full{transition:all .3s ease}
+        .btn-red,.btn-stop,.btn-delete-full{border-color:#a855f788;color:#c084fc}
+        .btn-red:hover,.btn-stop:hover,.btn-delete-full:hover{background:#a855f722;border-color:#a855f7}
+        .btn-start{border-color:#d8b4fe;color:#e9d5ff;background:#d8b4fe14}
+        .btn-start:hover{background:linear-gradient(110deg,#a855f7,#d8b4fe);color:#ffffff;border-color:#d8b4fe;box-shadow:0 6px 18px #d8b4fe33}
+        .btn-restart{border-color:#c084fc88;color:#c084fc}
+        .btn-restart:hover{background:#c084fc18}
+        .ctrl-btn{background:rgba(22,16,28,.9)}
+        .console-box{border-color:#d8b4fe44;box-shadow:none}
+        .console-body{color:#e9d5ff}
+        .status-dot{background:#a855f7}
+        .status-dot.running{background:#d8b4fe;box-shadow:0 0 6px #d8b4fe88}
+        .chip{border-color:#d8b4fe66;color:#e9d5ff}
+        .chip:hover{background:#d8b4fe22}
+        .chip.done{background:linear-gradient(110deg,#a855f7,#d8b4fe);color:#ffffff;border-color:transparent}
+        .tab-btn.active{background:#d8b4fe14;color:#e9d5ff;border:1px solid #d8b4fe66}
+
+        /* extra smooth */
+        html{scroll-behavior:smooth}
+        @keyframes zxFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+        @keyframes zxFade{from{opacity:0}to{opacity:1}}
+        .top-nav,.control-grid,.btn-delete-full,.tabs{animation:zxFadeUp .55s cubic-bezier(.22,.8,.26,1) both}
+        .control-grid{animation-delay:.05s}.btn-delete-full{animation-delay:.1s}.tabs{animation-delay:.15s}
+        .tab-content.active{animation:zxFadeUp .45s cubic-bezier(.22,.8,.26,1) both}
+        .btn,.ctrl-btn,.tab-btn,.tool-btn,.chip,.btn-delete-full,.cmd-input,.file-upload-zone,.console-box{transition:all .35s cubic-bezier(.22,.8,.26,1)}
+        .ctrl-btn:hover,.btn-delete-full:hover{transform:translateY(-1px)}
+        .ctrl-btn:active,.btn:active,.chip:active,.tool-btn:active,.tab-btn:active{transform:scale(.96);transition-duration:.12s}
+        .chip:hover{transform:translateY(-1px)}
+        .console-body{scroll-behavior:smooth}
+        .cmd-input:focus{box-shadow:0 0 0 3px #d8b4fe1a;border-color:#d8b4fe}
+        #fileListContainer li{animation:zxFade .4s ease both;transition:all .3s cubic-bezier(.22,.8,.26,1)}
+        #fileListContainer li:hover{background:#d8b4fe10!important}
+        @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    
+/* phone-width layout on every screen (desktop e o mobile er moto) */
+html{background:#0b0810}
+body{max-width:480px!important;margin:0 auto!important;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b0810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ApurboCloud">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-64.png">
+<style>html.desktop body{max-width:100%!important;margin:0!important}</style>
+<script>(function(){if(localStorage.getItem('apd_desktop')==='1')document.documentElement.classList.add('desktop');})();</script>
+{% include 'glass.html' %}
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+
+    <header>
+        <div class="logo">
+            <span class="logo-skull">ApurboCloud 👑</span>
+            <span class="logo-name">{{ site_name }}</span>
+        </div>
+        <a href="/logout" class="btn btn-red">↳ Logout</a>
+    </header>
+
+
+    <main>
+<div style="margin:0 0 14px;padding:0 16px;font:12px 'DM Mono',monospace;color:#c9bfd2;word-break:break-all">
+  🌐 PUBLIC URL: <a href="{{ public_url(server_name) }}" target="_blank" style="color:#7ef0a6">{{ public_url(server_name) }}</a><br>
+  INTERNAL PORT: {{ config.port }} • PLAN: {{ PLANS.get(config.plan or '256', PLANS['256']).label }}
+</div>
+<div id="usageBox" style="margin:0 0 14px;padding:14px;background:#141019;border:1px solid #2a2030;border-radius:14px;font:12px 'DM Mono',monospace;color:#c9bfd2">
+  <div style="font-weight:700;color:#d8b4fe;margin-bottom:10px">RESOURCE USAGE <span id="usRun" style="color:#9d93a6;font-weight:400"></span></div>
+  <div>RAM: <span id="usRam">-</span></div>
+  <div class="ubar"><i id="barRam"></i></div>
+  <div>CPU: <span id="usCpu">-</span></div>
+  <div class="ubar"><i id="barCpu"></i></div>
+  <div>STORAGE: <span id="usSto">-</span></div>
+  <div class="ubar"><i id="barSto"></i></div>
+</div>
+<style>.ubar{height:8px;background:#2a2030;border-radius:99px;overflow:hidden;margin:4px 0 12px}.ubar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d8b4fe,#a855f7);transition:width .6s}</style>
+<script>
+(function(){
+  const pct = (u, l) => l ? Math.min(100, (u / l) * 100) : 0;
+  async function refreshUsage(){
+    try {
+      const r = await fetch('/server/{{ server_name }}/usage');
+      const d = await r.json();
+      if (d.error) return;
+      document.getElementById('usRun').textContent = d.running ? '● RUNNING' : '○ STOPPED';
+      document.getElementById('usRam').textContent = d.ram_used_mb + ' / ' + d.ram_limit_mb + ' MB';
+      document.getElementById('barRam').style.width = pct(d.ram_used_mb, d.ram_limit_mb) + '%';
+      document.getElementById('usCpu').textContent = d.cpu_used_pct + '% / ' + d.cpu_limit_pct + '%';
+      document.getElementById('barCpu').style.width = pct(d.cpu_used_pct, d.cpu_limit_pct) + '%';
+      document.getElementById('usSto').textContent = d.storage_used_mb + ' / ' + d.storage_limit_mb + ' MB';
+      document.getElementById('barSto').style.width = pct(d.storage_used_mb, d.storage_limit_mb) + '%';
+    } catch (e) {}
+  }
+  refreshUsage();
+  setInterval(refreshUsage, 3000);
+})();
+</script>
+
+        <!-- Top Nav -->
+        <div class="top-nav">
+            <a href="/dashboard" class="btn btn-back">← BACK</a>
+            <div class="status-pill">
+                <span class="status-dot {{ 'running' if config.status == 'running' else '' }}"></span>
+                <span style="color: {{ '#d8b4fe' if config.status == 'running' else '#a855f7' }}">
+                    {{ config.status.upper() }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="control-grid">
+            <button class="ctrl-btn btn-start" onclick="startServer()">▶ START</button>
+            <button class="ctrl-btn btn-restart" onclick="restartServer()">↻ RESTART</button>
+            <button class="ctrl-btn btn-stop" onclick="stopServer()">■ STOP</button>
+        </div>
+
+        <form action="/server/delete/{{ server_name }}" method="POST" onsubmit="return confirm('Delete {{ server_name }}?')">
+            <button type="submit" class="btn-delete-full">🗑 DELETE SERVER</button>
+        </form>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('logs', event)">LOGS</button>
+            <button class="tab-btn" onclick="switchTab('files', event)">FILES</button>
+            <button class="tab-btn" onclick="switchTab('packages', event)">PACKAGES</button>
+            <button class="tab-btn" onclick="switchTab('settings', event)">SETTINGS</button>
+        </div>
+
+        <!-- 1. LOGS TAB -->
+        <div id="tab-logs" class="tab-content active">
+            <div class="console-box">
+                <div class="console-header">
+                    <div>&gt;_ CONSOLE <span style="font-size:9px;opacity:0.7">● {{ server_name }}</span></div>
+                    <div class="console-tools">
+                        <button class="tool-btn" style="border-color:#ef4444;color:#ef4444" onclick="clearLogs()">✕ CLEAR</button>
+                        <button class="tool-btn" style="border-color:var(--ac);color:var(--ac)" onclick="fetchLogs()">↻ REFRESH</button>
+                    </div>
+                </div>
+                <div id="logsBody" class="console-body">Loading console logs...</div>
+                
+                <div class="cmd-bar">
+                    <span style="color:var(--ac);font-weight:700">&gt;</span>
+                    <input type="text" id="cmdInput" class="cmd-input" placeholder="Type a command..." onkeydown="if(event.key==='Enter')execCmd()">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. FILES TAB (UPLOAD + FILE LIST) -->
+        <div id="tab-files" class="tab-content">
+            <div class="console-box" style="padding:20px">
+                <div style="margin-bottom:12px;font-size:12px;color:var(--ac);font-weight:700">📁 UPLOAD SERVER FILES</div>
+                
+                <form action="/server/{{ server_name }}/upload" method="POST" enctype="multipart/form-data">
+                    <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
+                        <div style="font-size:30px;margin-bottom:8px">📤</div>
+                        <div style="font-size:12px;color:var(--ac)">Click or Drag files to Upload (.zip, .py, .js)</div>
+                        <input type="file" id="fileInput" name="file" style="display:none" onchange="this.form.submit()">
+                    </div>
+                    <button type="submit" class="btn btn-start" style="width:100%;margin-bottom:20px">UPLOAD NOW</button>
+                </form>
+
+                <div style="margin-bottom:10px;font-size:12px;color:var(--ac);font-weight:700;border-top:1px solid var(--ac-dim);padding-top:15px">
+                    📋 UPLOADED FILES LIST
+                </div>
+
+                <div id="fileListContainer" style="max-height: 220px; overflow-y: auto;">
+                    {% if files %}
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;color:var(--ac)">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="selectAllFiles" onchange="toggleAllFiles(this.checked)"> SELECT ALL</label>
+                            <button id="bulkDeleteBtn" type="button" onclick="deleteSelectedFiles()" class="btn btn-red" style="padding:4px 10px;font-size:10px" disabled>🗑 DELETE SELECTED (0)</button>
+                        </div>
+                        <ul style="list-style:none;padding:0;margin:0">
+                            {% for file in files %}
+                            <li style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(10, 0, 21, 0.6);border:1px solid var(--ac-dim);border-radius:6px;margin-bottom:6px;font-size:11px;color:var(--ac);padding-left:{{ 10 + (file.path.count('/') * 16) }}px">
+                                <label style="display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer"><input type="checkbox" class="file-check" data-path="{{ file.path }}" data-dir="{{ 1 if file.type == 'dir' else 0 }}"> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ '📁' if file.type == 'dir' else '📄' }} {{ file.name }}</span></label>
+                                <button type="button" data-path="{{ file.path }}" onclick="deleteFile(this.dataset.path)" class="btn btn-red" style="padding:2px 8px;font-size:9px">🗑 DELETE</button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div style="font-size:11px;color:#6b7280;text-align:center;padding:12px;border:1px dashed #374151;border-radius:6px">
+                            No files uploaded yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 3. PACKAGES TAB -->
+        <div id="tab-packages" class="tab-content">
+            <div class="console-box" style="padding:20px">
+                <div style="margin-bottom:12px;font-size:12px;color:var(--ac);font-weight:700">📦 INSTALL PACKAGES / MODULES</div>
+                <p style="font-size:10px;color:#9ca3af;margin-bottom:12px">Tap a package to install it, or type any name below.</p>
+
+                <button class="btn btn-start" style="width:100%;margin-bottom:16px" onclick="installRequirements()">📥 INSTALL FROM requirements.txt</button>
+
+                <div style="display:flex;gap:10px;margin-bottom:16px">
+                    <input type="text" id="pkgInput" class="cmd-input" style="border:1px solid var(--ac-dim);padding:10px;border-radius:6px" placeholder="Package name (e.g. requests)" onkeydown="if(event.key==='Enter')installPackage()">
+                    <button class="btn btn-start" onclick="installPackage()">INSTALL</button>
+                </div>
+
+                <div id="pkgChips" class="chips"></div>
+                <div id="pkgMsg" style="font-size:10px;color:var(--ac);margin-top:12px;min-height:14px"></div>
+            </div>
+        </div>
+
+        <!-- 4. SETTINGS TAB -->
+        <div id="tab-settings" class="tab-content">
+            <div class="console-box" style="padding:20px">
+                <div style="margin-bottom:12px;font-size:12px;color:var(--ac);font-weight:700">⚙️ SERVER CONFIGURATION</div>
+                
+                <label style="font-size:10px;color:#9ca3af">MAIN FILE</label>
+                <input type="text" id="mainFileInput" class="cmd-input" style="border:1px solid var(--ac-dim);padding:8px;border-radius:6px;margin-bottom:12px" value="{{ config.main_file or '' }}" placeholder="e.g. main.py / index.js">
+                
+                <label style="font-size:10px;color:#9ca3af">CUSTOM COMMAND (OPTIONAL)</label>
+                <input type="text" id="mainCmdInput" class="cmd-input" style="border:1px solid var(--ac-dim);padding:8px;border-radius:6px;margin-bottom:16px" value="{{ config.main_command or '' }}" placeholder="e.g. python3 main.py">
+                
+                <button class="btn btn-start" style="width:100%" onclick="saveSettings()">SAVE SETTINGS</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Matrix Background
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        const chars = '0123456789アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+        const fontSize = 14;
+        const drops = Array(Math.floor(canvas.width / fontSize)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(13, 11, 20, 0.12)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillStyle = (i % 2) ? '#a855f7' : '#d8b4fe';
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // Tab Switching Fix
+        function switchTab(name, evt) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if(evt) evt.target.classList.add('active');
+            const target = document.getElementById('tab-' + name);
+            if(target) target.classList.add('active');
+        }
+
+        // Server Actions
+        async function startServer() {
+            await fetch('/server/{{ server_name }}/start', { method: 'POST' });
+            location.reload();
+        }
+
+        async function stopServer() {
+            await fetch('/server/{{ server_name }}/stop', { method: 'POST' });
+            location.reload();
+        }
+
+        async function restartServer() {
+            await stopServer();
+            setTimeout(startServer, 1000);
+        }
+
+        // Logs Operations
+        async function fetchLogs() {
+            try {
+                const res = await fetch('/server/{{ server_name }}/logs');
+                const data = await res.json();
+                const box = document.getElementById('logsBody');
+                box.textContent = data.logs || 'No logs found.';
+                box.scrollTop = box.scrollHeight;
+            } catch(e) {}
+        }
+        setInterval(fetchLogs, 3000);
+        fetchLogs();
+
+        async function clearLogs() {
+            await fetch('/server/{{ server_name }}/logs/clear', { method: 'POST' });
+            fetchLogs();
+        }
+
+        // Command Execution & Package Install
+        async function sendCommand(cmd) {
+            await fetch('/server/{{ server_name }}/exec', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ command: cmd })
+            });
+            switchTab('logs');
+            setTimeout(fetchLogs, 500);
+        }
+
+        async function execCmd() {
+            const input = document.getElementById('cmdInput');
+            const cmd = input.value.trim();
+            if(!cmd) return;
+            input.value = '';
+            await sendCommand(cmd);
+        }
+
+        const PY_PKGS = ['requests','aiohttp','httpx','flask','fastapi','uvicorn','gunicorn','python-telegram-bot','pyTelegramBotAPI','aiogram','telethon','pyrogram','tgcrypto','discord.py','py-cord','nextcord','disnake','python-dotenv','pandas','numpy','scipy','matplotlib','Pillow','opencv-python-headless','beautifulsoup4','lxml','selenium','playwright','scrapy','pymongo','motor','redis','sqlalchemy','psycopg2-binary','mysql-connector-python','aiosqlite','cryptography','pycryptodome','PyJWT','bcrypt','loguru','colorama','rich','tqdm','pydantic','pyyaml','psutil','schedule','APScheduler','websockets','python-socketio','yt-dlp','pytube','gTTS','pyttsx3','openai','anthropic','google-generativeai','groq','langchain','transformers','torch','scikit-learn','tensorflow','qrcode','pyfiglet','emoji','pytz','python-dateutil','aiofiles','uvloop','ujson','orjson','speedtest-cli','pyshorteners','fake-useragent','cloudscraper','telegraph','Telethon','pyngrok'];
+        const NODE_PKGS = ['express','discord.js','telegraf','node-telegram-bot-api','grammy','whatsapp-web.js','@whiskeysockets/baileys','axios','node-fetch','got','cheerio','puppeteer','playwright','socket.io','ws','cors','body-parser','cookie-parser','express-session','dotenv','mongoose','mongodb','redis','ioredis','mysql2','pg','sequelize','sqlite3','better-sqlite3','jsonwebtoken','bcryptjs','moment','dayjs','lodash','chalk','colors','nodemon','pm2','multer','sharp','jimp','canvas','ffmpeg-static','fluent-ffmpeg','ytdl-core','yt-search','openai','@anthropic-ai/sdk','@google/generative-ai','node-cron','uuid','qrcode','qrcode-terminal','pino','winston','typescript','ts-node','cross-env','compression','helmet','morgan'];
+        const RUNTIME = "{{ config.runtime or 'python' }}";
+
+        function renderChips() {
+            const list = RUNTIME === 'node' ? NODE_PKGS : PY_PKGS;
+            const box = document.getElementById('pkgChips');
+            box.innerHTML = '';
+            list.forEach(p => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'chip';
+                b.textContent = p;
+                b.onclick = () => installPackage(p, b);
+                box.appendChild(b);
+            });
+        }
+        renderChips();
+
+        async function installRequirements() {
+            const msg = document.getElementById('pkgMsg');
+            msg.textContent = 'Installing requirements.txt ...';
+            try {
+                const res = await fetch('/server/{{ server_name }}/requirements/install', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                const d = await res.json();
+                msg.textContent = d.success ? '✔ ' + d.message : '✕ ' + (d.error || 'Failed');
+            } catch (e) {
+                msg.textContent = '✕ Network error';
+            }
+            setTimeout(fetchLogs, 800);
+        }
+
+        async function installPackage(pkgName, chip) {
+            const input = document.getElementById('pkgInput');
+            const pkg = (pkgName || input.value).trim();
+            const msg = document.getElementById('pkgMsg');
+            if (!pkg) { msg.textContent = 'Enter a package name!'; return; }
+            if (chip) chip.classList.add('busy');
+            msg.textContent = 'Installing ' + pkg + ' ...';
+            try {
+                const res = await fetch('/server/{{ server_name }}/packages/install', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: pkg })
+                });
+                const d = await res.json();
+                msg.textContent = d.success ? '✔ ' + d.message : '✕ ' + (d.error || 'Failed');
+                if (d.success) {
+                    if (chip) chip.classList.add('done');
+                    if (!pkgName) input.value = '';
+                }
+            } catch (e) {
+                msg.textContent = '✕ Network error';
+            }
+            if (chip) chip.classList.remove('busy');
+            setTimeout(fetchLogs, 800);
+        }
+
+        // Settings Save
+        async function saveSettings() {
+            const mf = document.getElementById('mainFileInput').value.trim();
+            const mc = document.getElementById('mainCmdInput').value.trim();
+            await fetch('/server/{{ server_name }}/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ main_file: mf, main_command: mc })
+            });
+            alert('Settings saved successfully!');
+        }
+
+        // Multi-select delete
+        // Folder select korle tar bhitorer item alada count hoy na (folder-er sathe ekbar delete hoy)
+        function effectiveSelection() {
+            const checked = Array.from(document.querySelectorAll('.file-check:checked')).map(c => c.dataset.path);
+            return checked.filter(p => !checked.some(q => q !== p && p.startsWith(q + '/')));
+        }
+        function updateBulkUI() {
+            const all = document.querySelectorAll('.file-check');
+            const checkedCount = document.querySelectorAll('.file-check:checked').length;
+            const sel = effectiveSelection();
+            const btn = document.getElementById('bulkDeleteBtn');
+            if (btn) {
+                btn.disabled = sel.length === 0;
+                btn.textContent = '🗑 DELETE SELECTED (' + sel.length + ')';
+            }
+            const sa = document.getElementById('selectAllFiles');
+            if (sa) {
+                sa.checked = all.length > 0 && checkedCount === all.length;
+                sa.indeterminate = checkedCount > 0 && checkedCount < all.length;
+            }
+        }
+        function toggleAllFiles(v) {
+            document.querySelectorAll('.file-check').forEach(c => c.checked = v);
+            updateBulkUI();
+        }
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.classList && e.target.classList.contains('file-check')) updateBulkUI();
+        });
+        window.addEventListener('pageshow', updateBulkUI);
+        document.addEventListener('DOMContentLoaded', updateBulkUI);
+
+        async function deleteSelectedFiles() {
+            const files = effectiveSelection();
+            if (!files.length) return;
+            if (!confirm(files.length + ' ta item delete korben? (folder hole tar bhitorer sob file o delete hobe)')) return;
+            try {
+                const res = await fetch('/server/{{ server_name }}/files/delete-bulk', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ filenames: files })
+                });
+                const d = await res.json();
+                if (d.success) {
+                    let msg = d.deleted + ' ta item delete hoyeche.';
+                    if (d.failed && d.failed.length) msg += '\n' + d.failed.length + ' ta delete hoy nai:\n' + d.failed.join('\n');
+                    alert(msg);
+                    location.reload();
+                } else {
+                    alert(d.error || 'Could not delete files.');
+                }
+            } catch (e) {
+                alert('Error deleting files.');
+            }
+        }
+
+        // Delete Uploaded File
+        async function deleteFile(filename) {
+            if(!confirm(`Delete ${filename}?`)) return;
+            
+            try {
+                const res = await fetch(`/server/{{ server_name }}/file/delete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ filename: filename })
+                });
+                const d = await res.json().catch(() => ({}));
+                if (res.ok && d.success) {
+                    location.reload();
+                } else {
+                    alert(d.error || 'Could not delete file.');
+                }
+            } catch(e) {
+                alert('Error deleting file.');
+            }
+        }
+    </script>
+<button id="installBtn" type="button" style="display:none;position:fixed;right:16px;bottom:86px;z-index:999;padding:12px 16px;border:none;border-radius:12px;background:linear-gradient(110deg,#a855f7,#d8b4fe);color:#ffffff;font:800 12px 'DM Mono',monospace;letter-spacing:1px;cursor:pointer;box-shadow:0 8px 22px #0008">📲 INSTALL APP</button>
+<div id="installHelp" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);align-items:flex-end;justify-content:center" onclick="this.style.display='none'">
+  <div style="background:#141019;border:1px solid #2a2030;border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:480px;box-sizing:border-box;color:#f3eef7;font:14px/1.6 'DM Sans',system-ui,sans-serif" onclick="event.stopPropagation()">
+    <div style="font:700 13px 'DM Mono',monospace;color:#d8b4fe;margin-bottom:10px">FULL SCREEN APP HISEBE INSTALL KORUN</div>
+    <div><b>Android (Chrome):</b> upore ⋮ menu → <b>"Install app"</b> ba <b>"Add to Home screen"</b></div>
+    <div style="margin-top:8px"><b>iPhone (Safari):</b> Share (□↑) → <b>"Add to Home Screen"</b></div>
+    <div style="margin-top:8px;color:#9d93a6;font-size:12px">Install korle icon e click korle browser chhara full screen e khulbe.</div>
+    <button type="button" onclick="document.getElementById('installHelp').style.display='none'" style="margin-top:14px;width:100%;padding:12px;border:none;border-radius:10px;background:#2a2030;color:#fff;font:700 12px 'DM Mono',monospace;cursor:pointer">BUJHECHI</button>
+  </div>
+</div>
+<script>
+(function(){
+  var btn = document.getElementById('installBtn');
+  var help = document.getElementById('installHelp');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (standalone) { btn.style.display = 'none'; return; }
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; });
+  btn.style.display = 'block';
+  btn.addEventListener('click', async function(){
+    if (deferred) {
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+      btn.style.display = 'none';
+    } else {
+      help.style.display = 'flex';
+    }
+  });
+  window.addEventListener('appinstalled', function(){ btn.style.display = 'none'; });
+})();
+</script>
+<button id="desktopBtn" type="button" onclick="apdToggleDesktop()" style="position:fixed;left:16px;bottom:16px;z-index:999;padding:10px 14px;border:1px solid #2a2030;border-radius:12px;background:#141019;color:#d8b4fe;font:700 11px 'DM Mono',monospace;letter-spacing:1px;cursor:pointer">🖥 DESKTOP: OFF</button>
+<script>
+function apdLabel(){var b=document.getElementById('desktopBtn');if(b)b.textContent='🖥 DESKTOP: '+(document.documentElement.classList.contains('desktop')?'ON':'OFF');}
+function apdToggleDesktop(){var on=!document.documentElement.classList.contains('desktop');document.documentElement.classList.toggle('desktop',on);localStorage.setItem('apd_desktop',on?'1':'0');apdLabel();}
+apdLabel();
+</script>
+</body>
+</html>
